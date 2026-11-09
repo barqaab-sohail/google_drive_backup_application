@@ -1,0 +1,12 @@
+BARQAAB Drive Backup for Windows
+
+1. Extract the complete BARQAAB-Drive-Backup-1.0.0.zip file.
+2. In the extracted folder, open PowerShell (Shift+right-click an empty area and choose Open PowerShell window here).
+3. Run:
+   powershell -NoProfile -ExecutionPolicy Bypass -File .\Install-BARQAAB.ps1
+4. Answer Y or N when asked about a desktop shortcut.
+5. Launch BARQAAB Drive Backup from the Start menu.
+
+The installer places the application in your Windows user profile and does not
+require administrator access. Keep the full ZIP until installation finishes.
+The app's Google OAuth setup is separate; configure it in Settings after launch.

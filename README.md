@@ -17,6 +17,8 @@ flutter build windows --release
 
 The executable is `build/windows/x64/runner/Release/barqaab_google_drive_backup.exe`. Distribute the **whole Release directory**, preserving its structure: EXE, `flutter_windows.dll`, plugin DLLs, native SQLite assets and the `data` directory. The EXE alone is insufficient. A target PC may need the Microsoft Visual C++ 2015–2022 x64 Redistributable. See [Flutter Windows distribution documentation](https://docs.flutter.dev/platform-integration/windows/building#distributing-windows-apps).
 
+To make the portable installation package, build with `flutter build windows --release`, then zip the Release directory together with `packaging/Install-BARQAAB.ps1` and `packaging/INSTALL.txt`. Run the script from the extracted package to install under the current Windows user's LocalAppData and create a Start menu shortcut; administrator access is not needed.
+
 Windows is the supported desktop target. Other generated platform folders remain from the original project; they are not validated deliverables.
 
 ## Google Cloud setup
