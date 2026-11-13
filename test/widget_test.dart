@@ -16,6 +16,7 @@ void main() {
     final c = AppController(settings: AppSettings(File('unused-settings.json')))
       ..loading = false;
     await tester.pumpWidget(BackupApp(controller: c));
+    expect(find.byTooltip('Close application'), findsOneWidget);
     expect(find.text('Start Backup'), findsOneWidget);
     expect(
       find.text('No sources selected. Open Sources after connecting Google.'),

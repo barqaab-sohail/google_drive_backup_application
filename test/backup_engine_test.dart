@@ -90,8 +90,9 @@ class FakeDrive implements DriveAdapter {
   Future<Stream<List<int>>> download(
     CloudFile file,
     String? exportMime,
-    Cancellation cancellation,
-  ) async {
+    Cancellation cancellation, {
+    bool acknowledgeAbuse = false,
+  }) async {
     attempts[file.id] = (attempts[file.id] ?? 0) + 1;
     final attempt = attempts[file.id]!;
     Stream<List<int>> chunks() async* {

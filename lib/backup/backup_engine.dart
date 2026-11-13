@@ -30,6 +30,7 @@ class BackupEngine {
   final Cancellation cancellation;
   final int retention, concurrency;
   final bool exportPdf;
+  final Set<String> acknowledgeAbuseFileIds;
   final void Function(BackupProgress)? onProgress;
   final BackupProgress progress = BackupProgress();
   final List<Map<String, dynamic>> _errors = [];
@@ -43,12 +44,28 @@ class BackupEngine {
     this.retention = 5,
     this.concurrency = 2,
     this.exportPdf = false,
+    this.acknowledgeAbuseFileIds = const {},
     this.onProgress,
   }) : cancellation = cancellation ?? Cancellation();
   void _emit() => onProgress?.call(progress);
-  void _error(String source, String? file, Object error) {
+  void _error(
+    String source,
+    String? file,
+    Object error, {
+    String? sourceName,
+    String? fileName,
+    String? folder,
+  }) {
     progress.failed++;
-    _errors.add({'source': source, 'file': file, 'message': error.toString()});
+    final entry = <String, dynamic>{
+      'source': source,
+      'file': file,
+      'message': error.toString(),
+    };
+    if (sourceName != null) entry['sourceName'] = sourceName;
+    if (fileName != null) entry['fileName'] = fileName;
+    if (folder != null) entry['folder'] = folder;
+    _errors.add(entry);
     _emit();
   }
 
@@ -141,7 +158,17 @@ class BackupEngine {
               } on Cancelled {
                 rethrow;
               } catch (e) {
-                _error(source.key, entry.file.id, e);
+                _error(
+                  source.key,
+                  entry.file.id,
+                  e,
+                  sourceName: source.name,
+                  fileName: entry.file.name,
+                  folder: [
+                    ...entry.ancestors.map((f) => f.name),
+                    source.name,
+                  ].join(' / '),
+                );
               }
             }
           }
@@ -466,7 +493,12 @@ class BackupEngine {
     for (var attempt = 0; ; attempt++) {
       cancellation.check();
       try {
-        final stream = await drive.download(file, exportMime, cancellation);
+        final stream = await drive.download(
+          file,
+          exportMime,
+          cancellation,
+          acknowledgeAbuse: acknowledgeAbuseFileIds.contains(file.id),
+        );
         final output = await temp.open(mode: FileMode.write);
         try {
           await for (final chunk in stream) {

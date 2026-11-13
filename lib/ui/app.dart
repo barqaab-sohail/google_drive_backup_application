@@ -111,7 +111,9 @@ class _BackupShellState extends State<BackupShell> with WindowListener {
   }
 
   @override
-  void onWindowClose() async {
+  void onWindowClose() => _requestClose();
+
+  Future<void> _requestClose() async {
     if (closeDialog) return;
     if (c.busy) {
       closeDialog = true;
@@ -292,6 +294,12 @@ class _BackupShellState extends State<BackupShell> with WindowListener {
                               ? 'Google connected'
                               : 'Google disconnected',
                         ),
+                      ),
+                      const SizedBox(width: 12),
+                      IconButton.filledTonal(
+                        tooltip: 'Close application',
+                        onPressed: _requestClose,
+                        icon: const Icon(Icons.close),
                       ),
                     ],
                   ),
@@ -609,8 +617,20 @@ class _BackupShellState extends State<BackupShell> with WindowListener {
               children: (run['errors'] as List)
                   .map<Widget>(
                     (e) => ListTile(
-                      title: SelectableText('${e['file'] ?? e['source']}'),
-                      subtitle: SelectableText(e['message']),
+                      title: SelectableText(
+                        e['fileName'] != null
+                            ? '${e['fileName']}  (not backed up)'
+                            : '${e['sourceName'] ?? e['source']}  (source error)',
+                      ),
+                      subtitle: SelectableText(
+                        [
+                          if (e['folder'] != null) 'Folder: ${e['folder']}',
+                          if (e['file'] != null) 'File ID: ${e['file']}',
+                          if (e['fileName'] == null && e['sourceName'] != null)
+                            'Source ID: ${e['source']}',
+                          '${e['message']}',
+                        ].join('\n'),
+                      ),
                     ),
                   )
                   .toList(),
@@ -627,7 +647,7 @@ class _BackupShellState extends State<BackupShell> with WindowListener {
                           (s) => s['status'] != 'completed',
                         ))
                     ? null
-                    : () => act(() => c.retry(run)),
+                    : () => retryRun(run),
                 child: const Text('Retry failed files (rescan)'),
               ),
               TextButton(
@@ -648,6 +668,37 @@ class _BackupShellState extends State<BackupShell> with WindowListener {
       ),
     ],
   );
+  Future<void> retryRun(Map<String, dynamic> run) async {
+    final abuseFileIds = ((run['errors'] as List?) ?? [])
+        .where((e) => '${e['message']}'.contains('cannotDownloadAbusiveFile'))
+        .map((e) => '${e['file']}')
+        .where((id) => id.isNotEmpty)
+        .toSet();
+    if (abuseFileIds.isNotEmpty) {
+      final accepted = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Download flagged ZIP files?'),
+          content: const Text(
+            'Google Drive flagged one or more files as potentially harmful and blocked the download. Retrying with “Download anyway” tells Google you accept that risk. Continue only if you trust these files. Google only allows this for files you own (or Shared drives you organize).',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Download anyway'),
+            ),
+          ],
+        ),
+      );
+      if (accepted != true) return;
+    }
+    await act(() => c.retry(run, acknowledgeAbuseFileIds: abuseFileIds));
+  }
+
   Future<void> exportReport(Map<String, dynamic> run, bool csv) async {
     final location = await getSaveLocation(
       suggestedName: 'BARQAAB-${run['id']}.${csv ? 'csv' : 'json'}',
@@ -671,7 +722,7 @@ class _BackupShellState extends State<BackupShell> with WindowListener {
                 run['id'],
                 run['status'],
                 e['source'],
-                e['file'] ?? '',
+                e['fileName'] ?? e['file'] ?? '',
                 e['message'],
               ],
             )),

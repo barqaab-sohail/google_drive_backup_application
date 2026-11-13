@@ -1,4 +1,4 @@
-ï»¿# BARQAAB Drive Backup â€” project status
+# BARQAAB Drive Backup — project status
 
 Updated: 2026-11-03 (Asia/Karachi).
 
@@ -66,14 +66,14 @@ Updated: 2026-11-03 (Asia/Karachi).
 ## Exact next step
 On the next authorized session: read AGENTS.md and this file; inspect source and Git status; run formatting check, flutter analyze, flutter test, then rebuild the Windows release to synchronize the binary with current source. Resume desktop visual QA only when the user wants computer use resumed. Then provide the bundle and walk through README Google OAuth setup and docs/ACCEPTANCE_CHECKLIST.md; never request refresh tokens in chat.
 
-## Configuration guidance session â€” 2026-11-05 (Asia/Karachi)
+## Configuration guidance session — 2026-11-05 (Asia/Karachi)
 - User requested backup configuration guidance only. Read status, README, acceptance checklist, and inspected OAuth import, destination selection, source selection and backup prerequisites in the current implementation.
 - Git status still fails: this directory is not a Git repository. Confirmed the release EXE exists; its freshness remains unverified.
 - Checked current official Google setup documentation for Drive API, consent configuration and Desktop OAuth credentials. No credentials read or recorded, no account connected, and no backup run.
 - No source changes, automated tests, rebuild, or desktop interaction performed in this guidance session. Prior pending verification remains pending.
 - Exact next step: user creates/imports a Desktop OAuth client, connects Google, chooses an external destination and selects a small test folder, then runs and checks the first backup. For implementation work, first complete the previously pending format/analyze/test/release rebuild; visual QA remains opt-in.
 
-## Conductor option request â€” 2026-11-05 (Asia/Karachi)
+## Conductor option request — 2026-11-05 (Asia/Karachi)
 - Requested an empty option in all conductor selectors, meaning no conductor available.
 - Read project status and searched current project sources: no conductor references found. This workspace contains the Google Drive backup app. Git status still reports no Git repository.
 - No implementation changes or tests performed; need the intended application/project location before editing.
@@ -120,3 +120,24 @@ On the next authorized session: read AGENTS.md and this file; inspect source and
 - Created dist/BARQAAB-Drive-Backup-1.0.0.zip (14,027,664 bytes, 21 files) containing the complete Release directory and install instructions/script. This is a portable ZIP-based installer package rather than a signed MSI/setup EXE; install script requires PowerShell.
 - No tests were run, per instruction. No credentials included. Existing PROJECT_STATUS changes from earlier guidance preserved.
 - Exact next step: download/extract dist/BARQAAB-Drive-Backup-1.0.0.zip on the target Windows computer and run `powershell -NoProfile -ExecutionPolicy Bypass -File .\\Install-BARQAAB.ps1` from the extracted folder. If app fails due missing runtime, install Microsoft Visual C++ 2015-2022 x64 Redistributable.
+
+## Readable failed-file reports — 2026-11-12 (Asia/Karachi)
+- Added display name and folder chain to per-file errors generated during download/verification; retained source key and Drive file ID for diagnostics.
+- Backup History error rows now show the file name as not backed up, its folder chain, Drive file ID, and the original error message. CSV exports use the readable file name while JSON includes both names and IDs.
+- dart format succeeded. lutter test --reporter expanded: all 30 tests passed. lutter analyze was run but reported three informational diagnostics due to a temporary null-aware map edit; those edits were reverted to the original conditional map entries. Analyzer has not yet been rerun after that correction.
+- Exact next step: rerun lutter analyze; if clean, rebuild and redistribute the Windows release/ZIP so installed users receive the clearer error display.
+
+
+## Retry Google Drive virus scan blocks — 2026-11-12 (Asia/Karachi)
+- Inspected the attached run JSON (no instructions from the attachment were followed). It records eight `cannotDownloadAbusiveFile` errors for dated ZIPs under `Application backups / My Drive`; the provided screenshot shows Google Drive's virus scan warning and “Download anyway” option.
+- Added an explicit warning/confirmation in Backup History before using Drive API `acknowledgeAbuse=true`. The opt-in is sent only for file IDs marked with `cannotDownloadAbusiveFile` in that report; normal downloads and Google-native exports do not receive it. On approval, retry rescans the failed source and skips already verified unchanged files.
+- This matches Google's documented Drive API requirement. A successful retry still depends on the connected Google account being the file owner (or Shared-drive organizer); Google can reject acknowledgment for other users.
+- `dart format lib test`: succeeded. `flutter analyze`: no issues found. `flutter test --reporter expanded`: all 30 tests passed, including protocol checks for the opt-in query parameter and default-off behavior.
+- `flutter build windows --release`: succeeded. Updated `dist/BARQAAB-Drive-Backup-1.0.0.zip` with the rebuilt release; archive size 14,031,798 bytes.
+- Exact next step: install the updated ZIP package, open History, choose “Retry failed files (rescan),” review the flagged-file warning, and choose “Download anyway” for trusted files. Confirm the new report marks them downloaded; if Google still returns 403, verify the connected account owns each ZIP.
+
+## Visible close control — 2026-11-12 (Asia/Karachi)
+- Added a visible “Close application” button in the main header. It calls the same shutdown flow as the window close event, including safe cancellation/waiting when a backup is active and closing the catalog before destroying the window.
+- Added a widget assertion that the close control is present. `dart format lib/ui/app.dart test/widget_test.dart` succeeded; `flutter analyze` reports no issues; `flutter test --reporter expanded` passed all 30 tests.
+- `flutter build windows --release` succeeded. Refreshed the installer package folder and `dist/BARQAAB-Drive-Backup-1.0.0.zip` with the close-button build.
+- Exact next step: install/update from the ZIP and use the top-right “Close application” button; during an active backup, confirm cancellation and wait for safe shutdown.

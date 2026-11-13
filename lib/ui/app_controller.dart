@@ -183,7 +183,10 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> start({List<BackupSource>? retrySources}) async {
+  Future<void> start({
+    List<BackupSource>? retrySources,
+    Set<String> acknowledgeAbuseFileIds = const {},
+  }) async {
     if (busy) return;
     if (!connected) throw StateError('Connect Google in Settings first.');
     if (destination == null || catalog == null) {
@@ -209,6 +212,7 @@ class AppController extends ChangeNotifier {
         retention: settings.retention,
         concurrency: settings.concurrency,
         exportPdf: settings.exportPdf,
+        acknowledgeAbuseFileIds: acknowledgeAbuseFileIds,
         onProgress: (value) {
           progress = value;
           notifyListeners();
@@ -235,12 +239,18 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> retry(Map<String, dynamic> run) async {
+  Future<void> retry(
+    Map<String, dynamic> run, {
+    Set<String> acknowledgeAbuseFileIds = const {},
+  }) async {
     final failed = (run['sources'] as List)
         .where((s) => s['status'] != 'completed')
         .map((s) => BackupSource.fromJson(Map<String, dynamic>.from(s)))
         .toList();
     // A full rescan safely retries failures, while verified unchanged files are skipped.
-    await start(retrySources: failed);
+    await start(
+      retrySources: failed,
+      acknowledgeAbuseFileIds: acknowledgeAbuseFileIds,
+    );
   }
 }

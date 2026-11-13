@@ -179,8 +179,9 @@ class GoogleDrive implements DriveAdapter {
   Future<Stream<List<int>>> download(
     CloudFile file,
     String? exportMime,
-    Cancellation cancellation,
-  ) async {
+    Cancellation cancellation, {
+    bool acknowledgeAbuse = false,
+  }) async {
     if (!file.canDownload) {
       throw const DriveFailure(
         'Download restricted by owner or Workspace policy.',
@@ -195,7 +196,11 @@ class GoogleDrive implements DriveAdapter {
     final response = await _get(
       'files/${Uri.encodeComponent(file.id)}${exportMime == null ? '' : '/export'}',
       exportMime == null
-          ? {'alt': 'media', 'supportsAllDrives': 'true'}
+          ? {
+              'alt': 'media',
+              'supportsAllDrives': 'true',
+              if (acknowledgeAbuse) 'acknowledgeAbuse': 'true',
+            }
           : {'mimeType': exportMime},
       cancellation,
     );

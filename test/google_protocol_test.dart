@@ -259,6 +259,13 @@ void main() {
           } else {
             expect(query['alt'], 'media');
             expect(query['supportsAllDrives'], 'true');
+            if (request.url.path.endsWith('/export')) {
+              expect(query['acknowledgeAbuse'], isNull);
+            } else if (request.url.path.contains('flagged')) {
+              expect(query['acknowledgeAbuse'], 'true');
+            } else {
+              expect(query['acknowledgeAbuse'], isNull);
+            }
           }
           return http.Response('content', 200);
         }),
@@ -275,6 +282,13 @@ void main() {
         7,
       );
       await (await drive.download(
+        const CloudFile(id: 'flagged', name: 'flagged.zip'),
+        null,
+        Cancellation(),
+        acknowledgeAbuse: true,
+      )).drain<void>();
+      expect(calls, 2);
+      await (await drive.download(
         const CloudFile(
           id: 'doc',
           name: 'Doc',
@@ -283,7 +297,7 @@ void main() {
         'application/pdf',
         Cancellation(),
       )).drain<void>();
-      expect(calls, 2);
+      expect(calls, 3);
       await expectLater(
         drive.download(
           const CloudFile(

@@ -11,6 +11,7 @@ abstract class DriveAdapter {
   Future<Stream<List<int>>> download(
     CloudFile file,
     String? exportMime,
-    Cancellation cancellation,
-  );
+    Cancellation cancellation, {
+    bool acknowledgeAbuse = false,
+  });
 }
